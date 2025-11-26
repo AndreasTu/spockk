@@ -1,6 +1,3 @@
-abstract class AbstractBaseSpec {
-    @io.github.pshevche.spockk.lang.internal.FeatureMetadata(0)
-    fun `some feature`() {
-        assert(true)
-    }
+@org.spockframework.runtime.model.SpecMetadata(filename = "AbstractBaseSpec.kt", line = 1)
+abstract class AbstractBaseSpec : spock.lang.Specification() {
 }

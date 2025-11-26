@@ -12,6 +12,7 @@ plugins {
 dependencies {
     testImplementation(projects.spockkCore)
     testImplementation(gradleTestKit())
+    testImplementation(libs.spock)
     testImplementation(libs.junit.platform.testkit)
     testImplementation(libs.kotlin.compile.testing)
 
@@ -22,6 +23,7 @@ dependencies {
     testFixturesImplementation(gradleTestKit())
     testFixturesImplementation(libs.junit.platform.testkit)
     testFixturesImplementation(libs.kotlin.compile.testing)
+    testFixturesImplementation(libs.spock)
 }
 
 tasks.test {
@@ -30,8 +32,9 @@ tasks.test {
         "spockk.workspaceDir",
         layout.buildDirectory.dir("spockk-specs-workspaces").get().asFile.absolutePath
     )
-    systemProperty("spockk.kotlinVersion", libs.versions.kotlin.get())
     systemProperty("spockk.junitPlatformVersion", libs.versions.junit.platform.get())
+    systemProperty("spockk.kotlinVersion", libs.versions.kotlin.get())
+    systemProperty("spockk.spockVersion", libs.versions.spock.get())
 }
 
 powerAssert {

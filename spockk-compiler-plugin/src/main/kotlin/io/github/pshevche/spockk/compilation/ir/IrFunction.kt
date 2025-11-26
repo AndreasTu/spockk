@@ -12,6 +12,10 @@
  * limitations under the License.
  */
 
-package io.github.pshevche.spockk.lang.internal
+package io.github.pshevche.spockk.compilation.ir
 
-annotation class SpecMetadata
+import org.jetbrains.kotlin.ir.IrStatement
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+
+internal fun IrFunction.mutableStatements(): MutableList<IrStatement>? = (body as? IrBlockBody)?.statements

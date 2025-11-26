@@ -15,18 +15,15 @@
 package io.github.pshevche.spockk.compilation.transformer
 
 import io.github.pshevche.spockk.compilation.common.SpockkTransformationContext.SpecContext
-import io.github.pshevche.spockk.compilation.common.isOpenOrAbstract
 import org.jetbrains.kotlin.ir.declarations.IrClass
 
 internal class SpecRewriter(private val irFactory: SpockkIrFactory) {
 
     fun rewrite(spec: IrClass, context: SpecContext) {
-        annotateSpec(spec)
+        annotateSpec(spec, context)
     }
 
-    private fun annotateSpec(spec: IrClass) {
-        if (!spec.isOpenOrAbstract()) {
-            spec.annotations += irFactory.specMetadataAnnotation()
-        }
+    private fun annotateSpec(spec: IrClass, context: SpecContext) {
+        spec.annotations += irFactory.specMetadataAnnotation(context.fileName, context.line)
     }
 }

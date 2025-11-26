@@ -14,39 +14,56 @@
 
 package io.github.pshevche.spockk.compilation.transformer
 
-import io.github.pshevche.spockk.compilation.common.referenceClass
+import io.github.pshevche.spockk.compilation.common.FeatureBlockStatements
+import io.github.pshevche.spockk.compilation.ir.ContextAwareIrFactory
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
-import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
-import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.util.constructors
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal class SpockkIrFactory(private val pluginContext: IrPluginContext) {
+internal class SpockkIrFactory(pluginContext: IrPluginContext) {
 
     companion object {
-        private const val SPEC_METADATA_FQN = "io.github.pshevche.spockk.lang.internal.SpecMetadata"
-        private const val FEATURE_METADATA_FQN = "io.github.pshevche.spockk.lang.internal.FeatureMetadata"
+        private const val SPEC_METADATA_FQN = "org.spockframework.runtime.model.SpecMetadata"
+        private const val FEATURE_METADATA_FQN = "org.spockframework.runtime.model.FeatureMetadata"
+        private const val BLOCK_METADATA_FQN = "org.spockframework.runtime.model.BlockMetadata"
+        private const val BLOCK_KIND_FQN = "org.spockframework.runtime.model.BlockKind"
     }
 
-    fun specMetadataAnnotation() = createConstructorCall(pluginContext, SPEC_METADATA_FQN)
+    private val irFactory: ContextAwareIrFactory = ContextAwareIrFactory(pluginContext)
 
-    fun featureMetadataAnnotation(startOffset: Int, ordinal: Int) =
-        createConstructorCall(pluginContext, FEATURE_METADATA_FQN).apply {
-            arguments[0] = intConst(startOffset, ordinal)
-        }
+    fun specMetadataAnnotation(fileName: String, line: Int) = irFactory.constructorCall(
+        SPEC_METADATA_FQN,
+        irFactory.const(fileName),
+        irFactory.const(line)
+    )
 
-    private fun intConst(startOffset: Int, value: Int) =
-        IrConstImpl.int(startOffset, startOffset, pluginContext.irBuiltIns.intType, value)
+    fun featureMetadataAnnotation(
+        ordinal: Int,
+        name: String,
+        line: Int,
+        parameterNames: List<String>,
+        blocks: List<FeatureBlockStatements>,
+    ): IrConstructorCall = irFactory.constructorCall(
+        FEATURE_METADATA_FQN,
+        irFactory.const(ordinal),
+        irFactory.const(name),
+        irFactory.const(line),
+        irFactory.stringArray(parameterNames),
+        blockMetadataArray(blocks.filter { it.label.blockKind != null })
+    )
 
-    private fun createConstructorCall(pluginContext: IrPluginContext, className: String): IrConstructorCall {
-        val classSymbol = pluginContext.referenceClass(className)
-        val constructorSymbol = classSymbol.constructors.single()
-        val classType = classSymbol.defaultType
-        return IrConstructorCallImpl.fromSymbolOwner(classType, constructorSymbol)
+    private fun blockMetadataArray(blocks: List<FeatureBlockStatements>): IrExpression {
+        return irFactory.array(
+            BLOCK_METADATA_FQN,
+            blocks.map { block ->
+                irFactory.constructorCall(
+                    BLOCK_METADATA_FQN,
+                    irFactory.enumValue(block.label.blockKind!!, BLOCK_KIND_FQN),
+                    irFactory.stringArray(listOf(block.description))
+                )
+            }
+        )
     }
-
 }

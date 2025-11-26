@@ -12,13 +12,8 @@
  * limitations under the License.
  */
 
-package io.github.pshevche.spockk.runtime.util
+package io.github.pshevche.spockk.compilation.ir
 
-import io.github.pshevche.spockk.lang.internal.SpecMetadata
-import java.lang.reflect.Modifier
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 
-internal object SpecUtil {
-    fun isRunnableSpec(clazz: Class<*>): Boolean {
-        return clazz.isAnnotationPresent(SpecMetadata::class.java) && !Modifier.isAbstract(clazz.modifiers)
-    }
-}
+internal fun IrValueParameter.isThis() = this.name.asString() == "<this>"

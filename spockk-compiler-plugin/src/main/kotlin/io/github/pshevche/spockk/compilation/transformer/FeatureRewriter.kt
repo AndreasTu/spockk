@@ -15,7 +15,7 @@
 package io.github.pshevche.spockk.compilation.transformer
 
 import io.github.pshevche.spockk.compilation.common.SpockkTransformationContext.FeatureContext
-import io.github.pshevche.spockk.compilation.common.mutableStatements
+import io.github.pshevche.spockk.compilation.ir.mutableStatements
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 
 internal class FeatureRewriter(private val irFactory: SpockkIrFactory) {
@@ -35,8 +35,11 @@ internal class FeatureRewriter(private val irFactory: SpockkIrFactory) {
 
     private fun annotateFeature(feature: IrFunction, context: FeatureContext) {
         feature.annotations += irFactory.featureMetadataAnnotation(
-            feature.startOffset,
-            context.ordinal
+            context.ordinal,
+            context.name,
+            context.line,
+            context.parameterNames,
+            context.blocks
         )
     }
 }

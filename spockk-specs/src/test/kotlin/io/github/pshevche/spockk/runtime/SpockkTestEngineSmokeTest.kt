@@ -9,9 +9,10 @@ import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectUniqueId
+import spock.lang.Specification
 import java.util.stream.Collectors.toSet
 
-class SpockkTestEngineSmokeTest {
+class SpockkTestEngineSmokeTest : Specification() {
 
     fun `discovers test class by class name`() {
         `when`
@@ -26,7 +27,7 @@ class SpockkTestEngineSmokeTest {
     fun `discovers test class by unique id`() {
         `when`
         val events =
-            execute(selectUniqueId(UniqueId.forEngine("spockk").append("spec", SimpleSpec::class.qualifiedName!!)))
+            execute(selectUniqueId(UniqueId.forEngine("spock").append("spec", SimpleSpec::class.qualifiedName!!)))
 
         then
         events.assertStatistics {
@@ -56,7 +57,7 @@ class SpockkTestEngineSmokeTest {
         `when`
         var events = execute(
             selectUniqueId(
-                UniqueId.forEngine("spockk")
+                UniqueId.forEngine("spock")
                     .append("spec", SimpleSpec::class.qualifiedName!!)
                     .append("feature", "successful feature")
             )
@@ -70,7 +71,7 @@ class SpockkTestEngineSmokeTest {
         `when`
         events = execute(
             selectUniqueId(
-                UniqueId.forEngine("spockk")
+                UniqueId.forEngine("spock")
                     .append("spec", SimpleSpec::class.qualifiedName!!)
                     .append("feature", "failing feature")
             )
@@ -90,14 +91,13 @@ class SpockkTestEngineSmokeTest {
             .collect(toSet())
 
         then
-        assert(specIds.count() == 4)
+        assert(specIds.count() == 5)
     }
 
     fun `executes tests in the declaration order`() {
         `when`
         val features = execute(selectClass(SimpleSpec::class.java))
             .started()
-            .filter { it.testDescriptor.children.isEmpty() }
             .map { it.testDescriptor.displayName }
             .toList()
 

@@ -6,7 +6,8 @@
   </picture>
 </h1>
 
-This repository is home to Spockk, an add-on for the [Spock](https://github.com/spockframework/spock) testing framework that brings its expressive BDD-style syntax for Groovy to Kotlin.
+This repository is home to Spockk, an add-on for the [Spock](https://github.com/spockframework/spock) testing framework
+that brings its expressive BDD-style syntax for Groovy to Kotlin.
 
 ## Sneak peek
 
@@ -15,6 +16,7 @@ import io.github.pshevche.spockk.lang.and
 import io.github.pshevche.spockk.lang.given
 import io.github.pshevche.spockk.lang.`when`
 import io.github.pshevche.spockk.lang.then
+
 import spock.lang.Specification
 
 class MyFirstSpecification : Specification() {

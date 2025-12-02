@@ -19,9 +19,23 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
+@Suppress("SpellCheckingInspection")
 internal object SpockkConstants {
+  const val SPOCKK_LANG = "io.github.pshevche.spockk.lang"
+
+  val SPOCK_LANG_FQN = FqName("spock.lang")
   val SPOCK_RUNTIME_PKG = FqName("org.spockframework.runtime")
-  val SPECIFICATION_FQN = FqName("spock.lang.Specification")
-  val SPEC_INTERNALS_CLASS_ID = ClassId(SPOCK_RUNTIME_PKG, Name.identifier("SpecInternals"))
+  val SPECIFICATION_CLASS_ID = classId("spock.lang.Specification")
+  val SPEC_METADATA_CLASS_ID = classId("org.spockframework.runtime.model.SpecMetadata")
+
+  val SPECIFICATION_FQN = SPOCK_LANG_FQN.child(SPECIFICATION_CLASS_ID.shortClassName)
+  val SPEC_INTERNALS_CLASS_ID = classId("org.spockframework.runtime.SpecInternals")
   val KCLASS_JAVA_PROPERTY_ID = CallableId(FqName("kotlin.jvm"), Name.identifier("java"))
+
+  val SPOCKK_TIMES_METHOD = FqName("$SPOCKK_LANG.times")
+  val SPOCKK_COMPARE_TO_METHOD = FqName("$SPOCKK_LANG.compareTo")
+}
+
+fun classId(name:String) :ClassId {
+  return ClassId.topLevel(FqName(name))
 }

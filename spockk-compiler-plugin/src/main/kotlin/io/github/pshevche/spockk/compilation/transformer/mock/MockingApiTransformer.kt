@@ -18,11 +18,7 @@ import io.github.pshevche.spockk.compilation.common.BaseSpockkIrElementTransform
 import io.github.pshevche.spockk.compilation.common.SpockkConstants
 import io.github.pshevche.spockk.compilation.ir.ContextAwareIrFactory
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.IrProperty
-import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
-import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -42,6 +38,7 @@ internal class MockingApiTransformer(
   private val spec: IrClass
 ) : BaseSpockkIrElementTransformer() {
 
+  private var currentDecl :IrDeclaration? = null
   private val pluginContext = irFactory.pluginContext
   private val irBuiltIns = pluginContext.symbols.irBuiltIns
   private val specInternalsClass =
@@ -66,9 +63,21 @@ internal class MockingApiTransformer(
   fun rewriteMockingApi() {
     spec.declarations.forEach { declaration ->
       if (declaration is IrFunction || declaration is IrProperty) {
-        declaration.accept(this, null)
+        currentDecl = declaration
+        declaration.transform(this, null)
+        currentDecl = null
       }
     }
+  }
+
+  override fun visitExpression(expression: IrExpression): IrExpression {
+    if(currentDecl is IrFunction) {
+      val rewriter = InteractionRewriter(irFactory, expression, spec, currentDecl as IrFunction)
+      if (rewriter.isInteraction()) {
+        return rewriter.rewrite()!!
+      }
+    }
+    return super.visitExpression(expression)
   }
 
   override fun visitVariable(declaration: IrVariable): IrStatement {

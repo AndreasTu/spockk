@@ -18,10 +18,15 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.fir.backend.utils.defaultTypeWithoutArguments
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrFactory
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
+import org.jetbrains.kotlin.ir.declarations.impl.IrValueParameterImpl
+import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetEnumValue
+import org.jetbrains.kotlin.ir.expressions.IrGetValue
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.IrVarargElement
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
@@ -29,24 +34,28 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.SYNTHETIC_OFFSET
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.toIrConst
+import org.jetbrains.kotlin.name.ClassId
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal class ContextAwareIrFactory(val pluginContext: IrPluginContext) : IrFactory(pluginContext.irFactory.stageController) {
   private val irBuiltIns = pluginContext.irBuiltIns
 
-  internal fun constructorCall(className: String, vararg args: IrExpression): IrConstructorCall {
-    val classSymbol = pluginContext.referenceClass(className)
+  internal fun constructorCall(className: ClassId, vararg args: IrExpression): IrConstructorCall {
+    val classSymbol = pluginContext.referenceClass(className)!!
     val constructorSymbol = classSymbol.constructors.first()
     val classType = classSymbol.defaultType
     return IrConstructorCallImpl.fromSymbolOwner(classType, constructorSymbol).apply {
@@ -54,8 +63,8 @@ internal class ContextAwareIrFactory(val pluginContext: IrPluginContext) : IrFac
     }
   }
 
-  internal fun enumValue(value: String, enumClassName: String): IrGetEnumValue {
-    val enumClassSymbol = pluginContext.referenceClass(enumClassName)
+  internal fun enumValue(value: String, enumClassName: ClassId): IrGetEnumValue {
+    val enumClassSymbol = pluginContext.referenceClass(enumClassName)!!
     val enumEntry =
       enumClassSymbol.owner.declarations.filterIsInstance<IrEnumEntry>().first {
         it.name.asString() == value
@@ -71,8 +80,8 @@ internal class ContextAwareIrFactory(val pluginContext: IrPluginContext) : IrFac
   internal fun stringArray(elements: List<String>) =
     array(irBuiltIns.stringType, elements.map { const(it) })
 
-  internal fun array(elementClassName: String, elements: List<IrVarargElement>) =
-    array(pluginContext.referenceClass(elementClassName).defaultType, elements)
+  internal fun array(elementClassName: ClassId, elements: List<IrVarargElement>) =
+    array(pluginContext.referenceClass(elementClassName)!!.defaultType, elements)
 
   internal fun array(elementType: IrType, elements: List<IrVarargElement>): IrVararg =
     IrVarargImpl(
@@ -95,9 +104,29 @@ internal class ContextAwareIrFactory(val pluginContext: IrPluginContext) : IrFac
     )
   }
 
+  internal fun call(className: ClassId, methodName: String, vararg args: IrExpression ): IrCall{
+    val funcSymbol = function(className, methodName)
+    return call(funcSymbol.owner.returnType, funcSymbol).apply {
+      args.withIndex().forEach { arguments[it.index] = it.value }
+    }
+  }
+
+  internal fun function(className: ClassId, methodName: String) : IrSimpleFunctionSymbol{
+    val classSymbol = pluginContext.referenceClass(className)!!
+    val funcSymbol = classSymbol.functions.find { f-> f.owner.name.asString() == methodName }!!
+    return funcSymbol
+  }
+
   internal fun call(type: IrType, symbol: IrSimpleFunctionSymbol) =
     IrCallImpl(SYNTHETIC_OFFSET, SYNTHETIC_OFFSET, type, symbol)
 
   internal fun classReference(type: IrType, classSymbol: IrClassifierSymbol) =
     IrClassReferenceImpl(SYNTHETIC_OFFSET, SYNTHETIC_OFFSET, type, classSymbol, type)
+
+  internal fun getThisByFuncParameter(classType: IrType, param: IrValueParameter): IrGetValue{
+    return IrGetValueImpl(SYNTHETIC_OFFSET, SYNTHETIC_OFFSET,
+      classType,
+      param.symbol,
+      origin = IrStatementOrigin.IMPLICIT_ARGUMENT)
+  }
 }

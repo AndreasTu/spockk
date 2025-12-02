@@ -14,16 +14,15 @@
 
 package io.github.pshevche.spockk.compilation.transformer
 
+import io.github.pshevche.spockk.compilation.common.SpockkConstants
 import io.github.pshevche.spockk.compilation.common.SpockkTransformationContext.SpecContext
+import io.github.pshevche.spockk.compilation.common.classId
 import io.github.pshevche.spockk.compilation.ir.ContextAwareIrFactory
 import io.github.pshevche.spockk.compilation.transformer.mock.MockingApiTransformer
 import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.name.ClassId
 
 internal class SpecRewriter(private val irFactory: ContextAwareIrFactory) {
-
-  companion object {
-    private const val SPEC_METADATA_FQN = "org.spockframework.runtime.model.SpecMetadata"
-  }
 
   fun rewrite(spec: IrClass, context: SpecContext) {
     annotateSpec(spec, context)
@@ -35,7 +34,7 @@ internal class SpecRewriter(private val irFactory: ContextAwareIrFactory) {
   }
 
   private fun specMetadataAnnotation(fileName: String, line: Int) =
-    irFactory.constructorCall(SPEC_METADATA_FQN, irFactory.const(fileName), irFactory.const(line))
+    irFactory.constructorCall(SpockkConstants.SPEC_METADATA_CLASS_ID, irFactory.const(fileName), irFactory.const(line))
 
   private fun rewriteMockingApi(spec: IrClass) {
     MockingApiTransformer(irFactory, spec).rewriteMockingApi()

@@ -18,7 +18,7 @@ package io.github.pshevche.spockk.lang
 
 private fun throwIllegalLabelUsageException(label: String): Unit =
   throw UnsupportedOperationException(
-    "The 'given' label should not be used outside of Spockk feature methods"
+    "The '$label' label should not be used outside of Spockk feature methods"
   )
 
 object given {
@@ -69,4 +69,12 @@ object and {
 
 fun and(description: String) {
   throwIllegalLabelUsageException("and")
+}
+
+operator fun Int.times(ob: Any): Any {
+  throw UnsupportedOperationException(  "The times() method should not be used outside of Spockk Specifications.")
+}
+
+operator fun Any.compareTo(ob: Any): Int {
+  throw UnsupportedOperationException(  "The compareTo() method should not be used outside of Spockk Specifications.")
 }
